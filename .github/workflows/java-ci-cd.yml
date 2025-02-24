@@ -65,10 +65,6 @@ jobs:
            --output text 2>/dev/null)
            echo "LATEST_TAG output: $LATEST_TAG"
            
-           if [[ "$LATEST_TAG" == *"An error occurred"* ]]; then
-            echo "Error: AWS CLI command failed: $LATEST_TAG"
-            exit 1
-           fi
             if [[ -z "$LATEST_TAG" || "$LATEST_TAG" == "None" || "$LATEST_TAG" == "null" ]]; then
               NEW_TAG="v1"
             else
