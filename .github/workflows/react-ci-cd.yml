@@ -51,6 +51,11 @@ jobs:
           role-to-assume: ${{ inputs.role-assume }}
           role-session-name: actionssession
           aws-region: ${{ inputs.AWS_REGION }}
+          
+      - name: Use Node.js 16
+        uses: actions/setup-node@v4
+        with:
+          node-version: 16
 
       - name: Install Dependencies (Fresh Install)
         run: |
