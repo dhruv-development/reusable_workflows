@@ -32,7 +32,6 @@ permissions:
   id-token: write
   contents: read
   actions: read
-  # packages: write
 
 jobs:
   BUILD:
