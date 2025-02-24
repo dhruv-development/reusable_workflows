@@ -103,7 +103,7 @@ jobs:
             docker push "$ECR_REGISTRY/$ECR_REPO:$NEW_TAG" 
             echo "image=$ECR_REGISTRY/$ECR_REPO:$NEW_TAG" >> $GITHUB_OUTPUT
     outputs:
-      images: ${{ steps.build-image.outputs.image }}
+      image: ${{ steps.build-image.outputs.image }}
   deploy:   
     name: "DEPLOY"
     needs: BUILD
