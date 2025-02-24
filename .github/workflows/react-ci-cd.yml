@@ -59,7 +59,7 @@ jobs:
 
       - name: Install Dependencies (Always Fresh)
         run: |
-          rm -rf node_modules package-lock.json
+          rm -rf ./frontend/node_modules package-lock.json
           npm install
 
       - name: Cache Dependencies to S3
