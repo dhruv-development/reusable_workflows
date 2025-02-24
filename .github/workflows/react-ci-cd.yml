@@ -57,13 +57,15 @@ jobs:
           aws s3 cp s3://${{ inputs.S3_BUCKET }}/node_modules.tar.gz node_modules.tar.gz || echo "No cache found"
           tar -xzf node_modules.tar.gz || echo "No cache extracted"
 
-      - name: Install Dependencies (Always Fresh)
+      - name: Install Dependencies (Fresh Install)
         run: |
-          rm -rf ./frontend/node_modules package-lock.json
+          rm -rf ./frontend/node_modules ./frontend/package-lock.json
+          cd frontend
           npm install
 
       - name: Cache Dependencies to S3
         run: |
+          cd frontend
           tar -czf node_modules.tar.gz node_modules
           aws s3 cp node_modules.tar.gz s3://${{ inputs.S3_BUCKET }}/node_modules.tar.gz
 
