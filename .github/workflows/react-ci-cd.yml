@@ -52,22 +52,19 @@ jobs:
           role-session-name: actionssession
           aws-region: ${{ inputs.AWS_REGION }}
 
-      - name: Retrieve Cached Dependencies from S3
-        run: |
-          aws s3 cp s3://${{ inputs.S3_BUCKET }}/node_modules.tar.gz node_modules.tar.gz || echo "No cache found"
-          tar -xzf node_modules.tar.gz || echo "No cache extracted"
-
       - name: Install Dependencies (Fresh Install)
         run: |
-          rm -rf ./frontend/node_modules ./frontend/package-lock.json
           cd frontend
           npm install
 
-      - name: Cache Dependencies to S3
+      - name: Build React App
         run: |
           cd frontend
-          tar -czf node_modules.tar.gz node_modules
-          aws s3 cp node_modules.tar.gz s3://${{ inputs.S3_BUCKET }}/node_modules.tar.gz
+          npm run build
+
+      - name: Upload Build Folder to S3
+        run: |
+          aws s3 sync ./frontend/build s3://${{ inputs.S3_BUCKET }}/build-folder --delete
 
       - name: Login to ECR
         id: ecr-login
