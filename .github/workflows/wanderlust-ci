@@ -25,18 +25,18 @@ on:
         required: false 
         type: string
         default: "ubuntu-latest"
-      TASK_DEFINITION:
-        required: true
-        type: string
-      CONTAINER_NAME:
-        required: true
-        type: string
-      CLUSTER:
-        required: true
-        type: string
-      SERVICE:
-        required: true
-        type: string
+      # TASK_DEFINITION:
+      #   required: true
+      #   type: string
+      # CONTAINER_NAME:
+      #   required: true
+      #   type: string
+      # CLUSTER:
+      #   required: true
+      #   type: string
+      # SERVICE:
+      #   required: true
+      #   type: string
 
 permissions:
   id-token: write
