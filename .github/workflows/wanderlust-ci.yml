@@ -57,7 +57,7 @@ jobs:
           ECR_REPO: ${{ inputs.ECR_MONGO_REPO }}
         run: |
           TAG=$(date +%Y%m%d%H%M%S)
-          docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f database/Dockerfile .
+          docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f database/Dockerfile database/
           docker push "$ECR_REGISTRY/$ECR_REPO:$TAG"
           echo "mongo_tag=$TAG" >> $GITHUB_OUTPUT
     # outputs:
