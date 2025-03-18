@@ -140,6 +140,11 @@ jobs:
           role-session-name: actionssession
           aws-region: ${{ inputs.AWS_REGION }}
 
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2 # Added this to get the registry
+
+      # Mongo Deployment
       - name: Fetch Mongo Task Definition from ECS
         run: |
           aws ecs describe-task-definition \
@@ -153,7 +158,7 @@ jobs:
         with:
           task-definition: mongo-task-definition.json
           container-name: "mongodb"
-          image: ${{ needs.build-and-push.outputs.mongo_image_tag }}
+          image: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ECR_MONGO_REPO }}:${{ needs.build-and-push.outputs.mongo_image_tag }}
 
       - name: Deploy Mongo to AWS ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -177,7 +182,7 @@ jobs:
         with:
           task-definition: redis-task-definition.json
           container-name: "redis"
-          image: ${{ needs.build-and-push.outputs.redis_image_tag }}
+          image: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ECR_REDIS_REPO }}:${{ needs.build-and-push.outputs.redis_image_tag }}
 
       - name: Deploy Redis to AWS ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -201,7 +206,7 @@ jobs:
         with:
           task-definition: backend-task-definition.json
           container-name: "backend-container"
-          image: ${{ needs.build-and-push.outputs.backend_tag }}
+          image: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ECR_BACKEND_REPO }}:${{ needs.build-and-push.outputs.backend_image_tag }}
 
       - name: Deploy Backend to AWS ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -225,7 +230,7 @@ jobs:
         with:
           task-definition: frontend-task-definition.json
           container-name: "frontend"
-          image: ${{ needs.build-and-push.outputs.frontend_tag }}
+          image: ${{ steps.ecr-login.outputs.registry }}/${{ inputs.ECR_FRONTEND_REPO }}:${{ needs.build-and-push.outputs.frontend_image_tag }}
 
       - name: Deploy Frontend to AWS ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
