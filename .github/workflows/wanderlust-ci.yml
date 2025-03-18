@@ -25,7 +25,33 @@ on:
         required: false
         type: string
         default: "ubuntu-latest"
-
+      MONGO_TASK_DEFINITION:
+        required: true
+        type: string
+      REDIS_TASK_DEFINITION:
+        required: true
+        type: string
+      BACKEND_TASK_DEFINITION:
+        required: true
+        type: string      
+      FRONTEND_TASK_DEFINITION:
+        required: true
+        type: string  
+      MONGO_SERVICE:
+        required: true
+        type: string
+      REDIS_SERVICE:
+        required: true
+        type: string
+      BACKEND_SERVICE:
+        required: true
+        type: string
+      FRONTEND_SERVICE:
+        required: true
+        type: string
+      CLUSTER:
+        required: true
+        type: string
 permissions:
   id-token: write
   contents: read
@@ -60,9 +86,9 @@ jobs:
           docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f database/Dockerfile database/
           docker push "$ECR_REGISTRY/$ECR_REPO:$TAG"
           echo "mongo_tag=$TAG" >> $GITHUB_OUTPUT
-    # outputs:
-    #   mongo_tag: ${{ steps.build-mongo.outputs.mongo_tag }}
-
+          outputs:
+            mongo_tag: ${{ steps.build-mongo.outputs.mongo_tag }}
+            
       - name: Build and push redis image
         id: build-redis
         env:
@@ -73,9 +99,9 @@ jobs:
           docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f redis/Dockerfile .
           docker push "$ECR_REGISTRY/$ECR_REPO:$TAG"
           echo "redis_tag=$TAG" >> $GITHUB_OUTPUT
-    # outputs:
-    #   redis_tag: ${{ steps.build-redis.outputs.redis_tag }}
-
+          outputs:
+            redis_tag: ${{ steps.build-redis.outputs.redis_tag }}
+            
       - name: Build and push backend image
         id: build-backend
         env:
@@ -86,9 +112,9 @@ jobs:
           docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f backend/Dockerfile backend/
           docker push "$ECR_REGISTRY/$ECR_REPO:$TAG"
           echo "backend_tag=$TAG" >> $GITHUB_OUTPUT
-    # outputs:
-    #   backend_tag: ${{ steps.build-backend.outputs.backend_tag }}
-
+          outputs:
+            backend_tag: ${{ steps.build-backend.outputs.backend_tag }}
+            
       - name: Build and push frontend image
         id: build-frontend
         env:
@@ -99,5 +125,115 @@ jobs:
           docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f frontend/Dockerfile frontend/
           docker push "$ECR_REGISTRY/$ECR_REPO:$TAG"
           echo "frontend_tag=$TAG" >> $GITHUB_OUTPUT
-    # outputs:
-    #   frontend_tag: ${{ steps.build-frontend.outputs.frontend_tag }}
+          outputs:
+            frontend_tag: ${{ steps.build-frontend.outputs.frontend_tag }}
+
+  deploy:
+    name: "DEPLOY"
+    needs: build-and-push
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.role-assume }}
+          role-session-name: actionssession
+          aws-region: ${{ inputs.AWS_REGION }}
+
+      - name: Fetch Mongo Task Definition from ECS
+        run: |
+          aws ecs describe-task-definition \
+          --task-definition ${{ inputs.MONGO_TASK_DEFINITION }} \
+          --query "taskDefinition" \
+          --output json | jq -c > mongo-task-definition.json
+
+      - name: Fill new Mongo image to Task definition
+        id: mongo-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: mongo-task-definition.json
+          container-name: "mongodb"
+          image: ${{ steps.build-mongo.outputs.mongo_tag }}
+
+      - name: Deploy Mongo to AWS ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.mongo-task-def.outputs.task-definition }}
+          service: ${{ inputs.MONGO_SERVICE }}
+          cluster: ${{ inputs.CLUSTER }}
+          wait-for-service-stability: true
+
+      # Redis Deployment
+      - name: Fetch Redis Task Definition from ECS
+        run: |
+          aws ecs describe-task-definition \
+          --task-definition ${{ inputs.REDIS_TASK_DEFINITION }} \
+          --query "taskDefinition" \
+          --output json | jq -c > redis-task-definition.json
+
+      - name: Fill new Redis image to Task definition
+        id: redis-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: redis-task-definition.json
+          container-name: "redis"
+          image: ${{ steps.build-redis.outputs.redis_tag }}
+
+      - name: Deploy Redis to AWS ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.redis-task-def.outputs.task-definition }}
+          service: ${{ inputs.REDIS_SERVICE }}
+          cluster: ${{ inputs.CLUSTER }}
+          wait-for-service-stability: true
+
+      # Backend Deployment
+      - name: Fetch Backend Task Definition from ECS
+        run: |
+          aws ecs describe-task-definition \
+          --task-definition ${{ inputs.BACKEND_TASK_DEFINITION }} \
+          --query "taskDefinition" \
+          --output json | jq -c > backend-task-definition.json
+
+      - name: Fill new Backend image to Task definition
+        id: backend-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: backend-task-definition.json
+          container-name: "backend-container"
+          image: ${{ steps.build-backend.outputs.backend_tag }}
+
+      - name: Deploy Backend to AWS ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.backend-task-def.outputs.task-definition }}
+          service: ${{ inputs.BACKEND_SERVICE }}
+          cluster: ${{ inputs.CLUSTER }}
+          wait-for-service-stability: true
+
+      # Frontend Deployment
+      - name: Fetch Frontend Task Definition from ECS
+        run: |
+          aws ecs describe-task-definition \
+          --task-definition ${{ inputs.FRONTEND_TASK_DEFINITION }} \
+          --query "taskDefinition" \
+          --output json | jq -c > frontend-task-definition.json
+
+      - name: Fill new Frontend image to Task definition
+        id: frontend-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: frontend-task-definition.json
+          container-name: "frontend"
+          image: ${{ steps.build-frontend.outputs.frontend_tag }}
+
+      - name: Deploy Frontend to AWS ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.frontend-task-def.outputs.task-definition }}
+          service: ${{ inputs.FRONTEND_SERVICE }}
+          cluster: ${{ inputs.CLUSTER }}
+          wait-for-service-stability: true
