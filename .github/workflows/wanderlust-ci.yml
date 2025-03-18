@@ -61,11 +61,6 @@ jobs:
   build-and-push:
     name: "BUILD"
     runs-on: ${{ inputs.runner }}
-    outputs:
-      mongo_image_tag: ${{ steps.build-mongo.outputs.mongo_tag }}
-      redis_image_tag: ${{ steps.build-redis.outputs.redis_tag }}
-      backend_image_tag: ${{ steps.build-backend.outputs.backend_tag }}
-      frontend_image_tag: ${{ steps.build-frontend.outputs.frontend_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -124,7 +119,12 @@ jobs:
           docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f frontend/Dockerfile frontend/
           docker push "$ECR_REGISTRY/$ECR_REPO:$TAG"
           echo "frontend_tag=$TAG" >> $GITHUB_OUTPUT
-
+    outputs:
+      mongo_image_tag: ${{ steps.build-mongo.outputs.mongo_tag }}
+      redis_image_tag: ${{ steps.build-redis.outputs.redis_tag }}
+      backend_image_tag: ${{ steps.build-backend.outputs.backend_tag }}
+      frontend_image_tag: ${{ steps.build-frontend.outputs.frontend_tag }}
+      
   deploy:
     name: "DEPLOY"
     needs: build-and-push
