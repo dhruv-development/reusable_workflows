@@ -153,7 +153,7 @@ jobs:
         with:
           task-definition: mongo-task-definition.json
           container-name: "mongodb"
-          image: ${{ steps.build-mongo.outputs.mongo_tag }}
+          image: ${{ needs.build-and-push.outputs.mongo_image_tag }}
 
       - name: Deploy Mongo to AWS ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -177,7 +177,7 @@ jobs:
         with:
           task-definition: redis-task-definition.json
           container-name: "redis"
-          image: ${{ steps.build-redis.outputs.redis_tag }}
+          image: ${{ needs.build-and-push.outputs.redis_image_tag }}
 
       - name: Deploy Redis to AWS ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -201,7 +201,7 @@ jobs:
         with:
           task-definition: backend-task-definition.json
           container-name: "backend-container"
-          image: ${{ steps.build-backend.outputs.backend_tag }}
+          image: ${{ needs.build-and-push.outputs.backend_tag }}
 
       - name: Deploy Backend to AWS ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -225,7 +225,7 @@ jobs:
         with:
           task-definition: frontend-task-definition.json
           container-name: "frontend"
-          image: ${{ steps.build-frontend.outputs.frontend_tag }}
+          image: ${{ needs.build-and-push.outputs.frontend_tag }}
 
       - name: Deploy Frontend to AWS ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
