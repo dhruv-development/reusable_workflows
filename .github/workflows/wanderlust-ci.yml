@@ -2,13 +2,13 @@ name: Build and Push Docker Images
 
 on:
   workflow_call:
-      inputs:
+    inputs:
       role-assume:
         required: true
         type: string
       AWS_REGION:
         required: true
-        type: string  
+        type: string
       ECR_MONGO_REPO:
         required: true
         type: string
@@ -22,21 +22,9 @@ on:
         required: true
         type: string
       runner:
-        required: false 
+        required: false
         type: string
         default: "ubuntu-latest"
-      # TASK_DEFINITION:
-      #   required: true
-      #   type: string
-      # CONTAINER_NAME:
-      #   required: true
-      #   type: string
-      # CLUSTER:
-      #   required: true
-      #   type: string
-      # SERVICE:
-      #   required: true
-      #   type: string
 
 permissions:
   id-token: write
@@ -72,8 +60,8 @@ jobs:
           docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f database/Dockerfile .
           docker push "$ECR_REGISTRY/$ECR_REPO:$TAG"
           echo "mongo_tag=$TAG" >> $GITHUB_OUTPUT
-    outputs:
-      mongo_tag: ${{ steps.build-mongo.outputs.mongo_tag }}
+    # outputs:
+    #   mongo_tag: ${{ steps.build-mongo.outputs.mongo_tag }}
 
       - name: Build and push redis image
         id: build-redis
@@ -85,8 +73,8 @@ jobs:
           docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f redis/Dockerfile .
           docker push "$ECR_REGISTRY/$ECR_REPO:$TAG"
           echo "redis_tag=$TAG" >> $GITHUB_OUTPUT
-    outputs:
-      redis_tag: ${{ steps.build-redis.outputs.redis_tag }}
+    # outputs:
+    #   redis_tag: ${{ steps.build-redis.outputs.redis_tag }}
 
       - name: Build and push backend image
         id: build-backend
@@ -98,8 +86,8 @@ jobs:
           docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f backend/Dockerfile .
           docker push "$ECR_REGISTRY/$ECR_REPO:$TAG"
           echo "backend_tag=$TAG" >> $GITHUB_OUTPUT
-    outputs:
-      backend_tag: ${{ steps.build-backend.outputs.backend_tag }}
+    # outputs:
+    #   backend_tag: ${{ steps.build-backend.outputs.backend_tag }}
 
       - name: Build and push frontend image
         id: build-frontend
@@ -111,5 +99,5 @@ jobs:
           docker build -t "$ECR_REGISTRY/$ECR_REPO:$TAG" -f frontend/Dockerfile .
           docker push "$ECR_REGISTRY/$ECR_REPO:$TAG"
           echo "frontend_tag=$TAG" >> $GITHUB_OUTPUT
-    outputs:
-      frontend_tag: ${{ steps.build-frontend.outputs.frontend_tag }}
+    # outputs:
+    #   frontend_tag: ${{ steps.build-frontend.outputs.frontend_tag }}
