@@ -75,30 +75,6 @@ jobs:
       - name: Login to ECR
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and push mongo image
-        id: build-mongo
-        env:
-          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
-          ECR_REPO: ${{ inputs.ECR_MONGO_REPO }}
-        run: |
-          TAG=$(date +%Y-%m-%d-%H-%M-%S)
-          FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG" 
-          docker build -t "$FULL_IMAGE_URI" -f database/Dockerfile database/
-          docker push "$FULL_IMAGE_URI"
-          echo "mongo_image_uri=$FULL_IMAGE_URI" >> $GITHUB_OUTPUT 
-    
-      - name: Build and push redis image
-        id: build-redis
-        env:
-          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
-          ECR_REPO: ${{ inputs.ECR_REDIS_REPO }}
-        run: |
-          TAG=$(date +%Y-%m-%d-%H-%M-%S)
-          FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG" 
-          docker build -t "$FULL_IMAGE_URI" -f redis/Dockerfile redis/
-          docker push "$FULL_IMAGE_URI"
-          echo "redis_image_uri=$FULL_IMAGE_URI" >> $GITHUB_OUTPUT
             
       - name: Build and push backend image
         id: build-backend
@@ -106,11 +82,29 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPO: ${{ inputs.ECR_BACKEND_REPO }}
         run: |
-          TAG=$(date +%Y-%m-%d-%H-%M-%S)
-          FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG"
-          docker build -t "$FULL_IMAGE_URI" -f backend/Dockerfile backend/
-          docker push "$FULL_IMAGE_URI"
-          echo "backend_image_uri=$FULL_IMAGE_URI" >> $GITHUB_OUTPUT
+           LATEST_TAG=$(aws ecr describe-images --repository-name $ECR_REPO \
+           --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' \
+           --output text 2>/dev/null)
+           echo "LATEST_TAG output: $LATEST_TAG"
+           
+            if [[ -z "$LATEST_TAG" || "$LATEST_TAG" == "None" || "$LATEST_TAG" == "null" ]]; then
+              NEW_TAG="v1"
+            else
+              VERSION_NUM=$(echo "$LATEST_TAG" | grep -oE '[0-9]+$')
+              if [[ -z "$VERSION_NUM" ]]; then
+                NEW_TAG="v1"
+              else  
+                NEW_TAG="v$((VERSION_NUM + 1))"
+              fi
+            fi
+
+            echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+            echo "Latest tag: $LATEST_TAG"
+            echo "New tag: $NEW_TAG"
+            FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG"
+            docker build -t "$FULL_IMAGE_URI" -f backend/Dockerfile /backend 
+            docker push "$FULL_IMAGE_URI" 
+            echo "backend_image_uri=$ECR_REGISTRY/$ECR_REPO:$NEW_TAG" >> $GITHUB_OUTPUT
             
       - name: Build and push frontend image
         id: build-frontend
@@ -118,20 +112,32 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPO: ${{ inputs.ECR_FRONTEND_REPO }}
         run: |
-          TAG=$(date +%Y-%m-%d-%H-%M-%S)
-          FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG"
-          docker build -t "$FULL_IMAGE_URI" -f frontend/Dockerfile frontend/
-          docker push "$FULL_IMAGE_URI"
-          echo "frontend_image_uri=$FULL_IMAGE_URI" >> $GITHUB_OUTPUT
+           LATEST_TAG=$(aws ecr describe-images --repository-name $ECR_REPO \
+           --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' \
+           --output text 2>/dev/null)
+           echo "LATEST_TAG output: $LATEST_TAG"
+           
+            if [[ -z "$LATEST_TAG" || "$LATEST_TAG" == "None" || "$LATEST_TAG" == "null" ]]; then
+              NEW_TAG="v1"
+            else
+              VERSION_NUM=$(echo "$LATEST_TAG" | grep -oE '[0-9]+$')
+              if [[ -z "$VERSION_NUM" ]]; then
+                NEW_TAG="v1"
+              else  
+                NEW_TAG="v$((VERSION_NUM + 1))"
+              fi
+            fi
+
+            echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+            echo "Latest tag: $LATEST_TAG"
+            echo "New tag: $NEW_TAG"
+            FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG"
+            docker build -t "$FULL_IMAGE_URI" -f frontend/Dockerfile /frontend 
+            docker push "$FULL_IMAGE_URI" 
+            echo "frontend_image_uri=$ECR_REGISTRY/$ECR_REPO:$NEW_TAG" >> $GITHUB_OUTPUT
     outputs:
-      # mongo_image_tag: ${{ steps.build-mongo.outputs.mongo_tag }}
-      mongo_image_uri: ${{ steps.build-mongo.outputs.mongo_image_uri }}
-      redis_image_uri: ${{ steps.build-redis.outputs.redis_image_uri }}
       backend_image_uri: ${{ steps.build-backend.outputs.backend_image_uri }}
       frontend_image_uri: ${{ steps.build-frontend.outputs.frontend_image_uri }}
-      # redis_image_tag: ${{ steps.build-redis.outputs.redis_tag }}
-      # backend_image_tag: ${{ steps.build-backend.outputs.backend_tag }}
-      # frontend_image_tag: ${{ steps.build-frontend.outputs.frontend_tag }}
       
   deploy:
     name: "DEPLOY"
@@ -151,54 +157,6 @@ jobs:
       - name: Login to ECR
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2 # Added this to get the registry
-
-      # Mongo Deployment
-      - name: Fetch Mongo Task Definition from ECS
-        run: |
-          aws ecs describe-task-definition \
-          --task-definition ${{ inputs.MONGO_TASK_DEFINITION }} \
-          --query "taskDefinition" \
-          --output json | jq -c > mongo-task-definition.json
-
-      - name: Fill new Mongo image to Task definition
-        id: mongo-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: mongo-task-definition.json
-          container-name: "mongodb"
-          image: ${{ needs.build-and-push.outputs.mongo_image_uri }}
-
-      - name: Deploy Mongo to AWS ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.mongo-task-def.outputs.task-definition }}
-          service: ${{ inputs.MONGO_SERVICE }}
-          cluster: ${{ inputs.CLUSTER }}
-          wait-for-service-stability: true
-
-      # Redis Deployment
-      - name: Fetch Redis Task Definition from ECS
-        run: |
-          aws ecs describe-task-definition \
-          --task-definition ${{ inputs.REDIS_TASK_DEFINITION }} \
-          --query "taskDefinition" \
-          --output json | jq -c > redis-task-definition.json
-
-      - name: Fill new Redis image to Task definition
-        id: redis-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: redis-task-definition.json
-          container-name: "redis"
-          image: ${{ needs.build-and-push.outputs.redis_image_uri }}
-
-      - name: Deploy Redis to AWS ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.redis-task-def.outputs.task-definition }}
-          service: ${{ inputs.REDIS_SERVICE }}
-          cluster: ${{ inputs.CLUSTER }}
-          wait-for-service-stability: true
 
       # Backend Deployment
       - name: Fetch Backend Task Definition from ECS
