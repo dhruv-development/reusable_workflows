@@ -82,7 +82,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPO: ${{ inputs.ECR_MONGO_REPO }}
         run: |
-          TAG=$(date +%Y-%m-%d-%H:%M:%S)
+          TAG=$(date +%Y-%m-%d-%H-%M-%S)
           FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG" 
           docker build -t "$FULL_IMAGE_URI" -f database/Dockerfile database/
           docker push "$FULL_IMAGE_URI"
@@ -94,7 +94,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPO: ${{ inputs.ECR_REDIS_REPO }}
         run: |
-          TAG=$(date +%Y-%m-%d-%H:%M:%S)
+          TAG=$(date +%Y-%m-%d-%H-%M-%S)
           FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG" 
           docker build -t "$FULL_IMAGE_URI" -f redis/Dockerfile .
           docker push "$FULL_IMAGE_URI"
@@ -106,7 +106,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPO: ${{ inputs.ECR_BACKEND_REPO }}
         run: |
-          TAG=$(date +%Y-%m-%d-%H:%M:%S)
+          TAG=$(date +%Y-%m-%d-%H-%M-%S)
           FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG"
           docker build -t "$FULL_IMAGE_URI" -f backend/Dockerfile backend/
           docker push "$FULL_IMAGE_URI"
@@ -118,7 +118,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPO: ${{ inputs.ECR_FRONTEND_REPO }}
         run: |
-          TAG=$(date +%Y-%m-%d-%H:%M:%S)
+          TAG=$(date +%Y-%m-%d-%H-%M-%S)
           FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG"
           docker build -t "$FULL_IMAGE_URI" -f frontend/Dockerfile frontend/
           docker push "$FULL_IMAGE_URI"
