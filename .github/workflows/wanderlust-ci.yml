@@ -94,7 +94,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPO: ${{ inputs.ECR_FRONTEND_REPO }}
         run: |
-           LATEST_TAG=$(aws ecr describe-images --repository-name $ECR_FRONTEND_REPO \
+           LATEST_TAG=$(aws ecr describe-images --repository-name $ECR_REPO \
            --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' \
            --output text 2>/dev/null)
            echo "LATEST_TAG output: $LATEST_TAG"
