@@ -96,7 +96,7 @@ jobs:
         run: |
           TAG=$(date +%Y-%m-%d-%H-%M-%S)
           FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG" 
-          docker build -t "$FULL_IMAGE_URI" -f redis/Dockerfile .
+          docker build -t "$FULL_IMAGE_URI" -f redis/Dockerfile redis/
           docker push "$FULL_IMAGE_URI"
           echo "redis_image_uri=$FULL_IMAGE_URI" >> $GITHUB_OUTPUT
             
