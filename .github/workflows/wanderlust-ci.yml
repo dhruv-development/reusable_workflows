@@ -213,7 +213,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: backend-task-definition.json
-          container-name: "backend-container"
+          container-name: "wanderlust-backend"
           image: ${{ needs.build-and-push.outputs.backend_image_uri }}
 
       - name: Deploy Backend to AWS ECS
@@ -237,7 +237,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: frontend-task-definition.json
-          container-name: "frontend"
+          container-name: "wanderlust-frontend"
           image: ${{ needs.build-and-push.outputs.frontend_image_uri }}
 
       - name: Deploy Frontend to AWS ECS
