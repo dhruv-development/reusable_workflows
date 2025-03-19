@@ -126,9 +126,9 @@ jobs:
     outputs:
       # mongo_image_tag: ${{ steps.build-mongo.outputs.mongo_tag }}
       mongo_image_uri: ${{ steps.build-mongo.outputs.mongo_image_uri }}
-      redis_image_uri: ${{ steps.build-mongo.outputs.redis_image_uri }}
-      backend_image_uri: ${{ steps.build-mongo.outputs.backend_image_uri }}
-      frontend_image_uri: ${{ steps.build-mongo.outputs.frontend_image_uri }}
+      redis_image_uri: ${{ steps.build-redis.outputs.redis_image_uri }}
+      backend_image_uri: ${{ steps.build-backend.outputs.backend_image_uri }}
+      frontend_image_uri: ${{ steps.build-frontend.outputs.frontend_image_uri }}
       # redis_image_tag: ${{ steps.build-redis.outputs.redis_tag }}
       # backend_image_tag: ${{ steps.build-backend.outputs.backend_tag }}
       # frontend_image_tag: ${{ steps.build-frontend.outputs.frontend_tag }}
