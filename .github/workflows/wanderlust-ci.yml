@@ -83,7 +83,7 @@ jobs:
             echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
             echo "Latest tag: $LATEST_TAG"
             echo "New tag: $NEW_TAG"
-            FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG"
+            FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$NEW_TAG"
             docker build -t "$FULL_IMAGE_URI" -f backend/Dockerfile /backend 
             docker push "$FULL_IMAGE_URI" 
             echo "backend_image_uri=$FULL_IMAGE_URI" >> $GITHUB_OUTPUT
@@ -113,10 +113,10 @@ jobs:
             echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
             echo "Latest tag: $LATEST_TAG"
             echo "New tag: $NEW_TAG"
-            FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG"
+            FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$NEW_TAG"
             docker build -t "$FULL_IMAGE_URI" -f frontend/Dockerfile /frontend 
             docker push "$FULL_IMAGE_URI" 
-            echo "frontend_image_uri=$ECR_REGISTRY/$ECR_REPO:$NEW_TAG" >> $GITHUB_OUTPUT
+            echo "frontend_image_uri=$FULL_IMAGE_URI" >> $GITHUB_OUTPUT
     outputs:
       backend_image_uri: ${{ steps.build-backend.outputs.backend_image_uri }}
       frontend_image_uri: ${{ steps.build-frontend.outputs.frontend_image_uri }}
