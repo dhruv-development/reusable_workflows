@@ -166,7 +166,7 @@ jobs:
         with:
           task-definition: mongo-task-definition.json
           container-name: "mongodb"
-          # image: ${{ needs.build-and-push.outputs.mongo_image_uri }}
+          image: ${{ needs.build-and-push.outputs.mongo_image_uri }}
 
       - name: Deploy Mongo to AWS ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
