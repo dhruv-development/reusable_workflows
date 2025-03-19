@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Wanderlust Reusable CI/CD
 
 on:
   workflow_call:
@@ -7,12 +7,6 @@ on:
         required: true
         type: string
       AWS_REGION:
-        required: true
-        type: string
-      ECR_MONGO_REPO:
-        required: true
-        type: string
-      ECR_REDIS_REPO:
         required: true
         type: string
       ECR_BACKEND_REPO:
@@ -25,24 +19,12 @@ on:
         required: false
         type: string
         default: "ubuntu-latest"
-      MONGO_TASK_DEFINITION:
-        required: true
-        type: string
-      REDIS_TASK_DEFINITION:
-        required: true
-        type: string
       BACKEND_TASK_DEFINITION:
         required: true
         type: string      
       FRONTEND_TASK_DEFINITION:
         required: true
         type: string  
-      MONGO_SERVICE:
-        required: true
-        type: string
-      REDIS_SERVICE:
-        required: true
-        type: string
       BACKEND_SERVICE:
         required: true
         type: string
@@ -104,7 +86,7 @@ jobs:
             FULL_IMAGE_URI="$ECR_REGISTRY/$ECR_REPO:$TAG"
             docker build -t "$FULL_IMAGE_URI" -f backend/Dockerfile /backend 
             docker push "$FULL_IMAGE_URI" 
-            echo "backend_image_uri=$ECR_REGISTRY/$ECR_REPO:$NEW_TAG" >> $GITHUB_OUTPUT
+            echo "backend_image_uri=$FULL_IMAGE_URI" >> $GITHUB_OUTPUT
             
       - name: Build and push frontend image
         id: build-frontend
@@ -112,7 +94,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPO: ${{ inputs.ECR_FRONTEND_REPO }}
         run: |
-           LATEST_TAG=$(aws ecr describe-images --repository-name $ECR_REPO \
+           LATEST_TAG=$(aws ecr describe-images --repository-name $ECR_FRONTEND_REPO \
            --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]' \
            --output text 2>/dev/null)
            echo "LATEST_TAG output: $LATEST_TAG"
@@ -156,9 +138,8 @@ jobs:
 
       - name: Login to ECR
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2 # Added this to get the registry
-
-      # Backend Deployment
+        uses: aws-actions/amazon-ecr-login@v2 
+      
       - name: Fetch Backend Task Definition from ECS
         run: |
           aws ecs describe-task-definition \
@@ -182,7 +163,6 @@ jobs:
           cluster: ${{ inputs.CLUSTER }}
           wait-for-service-stability: true
 
-      # Frontend Deployment
       - name: Fetch Frontend Task Definition from ECS
         run: |
           aws ecs describe-task-definition \
